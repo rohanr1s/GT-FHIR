@@ -1,19 +1,8 @@
 package edu.gatech.i3l.jpa.model.omop.ext;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-
 import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dstu2.composite.AddressDt;
-import ca.uhn.fhir.model.dstu2.composite.HumanNameDt;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
-import ca.uhn.fhir.model.dstu2.valueset.AdministrativeGenderEnum;
-import ca.uhn.fhir.model.primitive.DateDt;
-import ca.uhn.fhir.model.primitive.IdDt;
-import ca.uhn.fhir.model.primitive.StringDt;
 import edu.gatech.i3l.jpa.model.omop.Concept;
-import edu.gatech.i3l.jpa.model.omop.IResourceTable;
 import edu.gatech.i3l.jpa.model.omop.Location;
 import edu.gatech.i3l.jpa.model.omop.Person;
 import edu.gatech.i3l.jpa.model.omop.Provider;
@@ -23,7 +12,7 @@ import edu.gatech.i3l.jpa.model.omop.Provider;
  * all the data specified for FHIR.
  * @author Ismael Sarmento
  */
-public class PatientFhirExtTable extends Person implements IResourceTable{
+public class PatientFhirExtTable extends Person{
 
 	private String familyName;
 	private String givenName1;
@@ -129,56 +118,11 @@ public class PatientFhirExtTable extends Person implements IResourceTable{
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends IResource> T getRelatedResource() {
-		Patient patient = new Patient();
-		patient.setId(new IdDt(this.getId()));
+		Patient patient = super.getRelatedResource();
 		
-		Location location = this.getLocation();
-		if(location != null){
-			List<AddressDt> addresses = new ArrayList<AddressDt>();
-			AddressDt address = new AddressDt(); 
-			List<StringDt> lines = new ArrayList<StringDt>();
-			lines.add(new StringDt(location.getAddress1()));
-			lines.add(new StringDt(location.getAddress2()));
-			address.setLine(lines ); 
-			address.setCity(location.getCity());
-			address.setPostalCode(location.getZipCode());
-			address.setCountry(location.getCountry());
-			addresses.add(address);
-			patient.setAddress(addresses);
-		}
-		
-		Calendar calendar = Calendar.getInstance();
-		calendar.set(this.getYearOfBirth(), this.getMonthOfBirth(), this.getDayOfBirth());
-		patient.setBirthDate(new DateDt(calendar.getTime()));
-		
-//		Concept gender = this.getGenderConcept(); 
-//		if(gender != null){
-//			AdministrativeGenderEnum admGender = null;
-//			String gName = gender.getName(); 
-//			if("MALE".equals(gName)){
-//				admGender = AdministrativeGenderEnum.MALE;
-//			}else if("FEMALE".equals(gName)){
-//				admGender = AdministrativeGenderEnum.FEMALE;
-//			}else if("OTHER".equals(gName)){
-//				admGender = AdministrativeGenderEnum.OTHER;
-//			}else if("UNKNOWN".equals(gName)){
-//				admGender = AdministrativeGenderEnum.UNKNOWN;
-//			}
-//			patient.setGender(admGender);
-//		}
-		
-		//		patient.setDeceased(new ICompositeDatatype() {
-		List<HumanNameDt> name = new ArrayList<HumanNameDt>();
-		HumanNameDt humanNameDt = new HumanNameDt();
-		List<StringDt> given = new ArrayList<StringDt>();
-		given.add(new StringDt(this.getGivenName1()));
-		given.add(new StringDt(this.getGivenName2()));
-		humanNameDt.setGiven(given );
-		List<StringDt> family = new ArrayList<StringDt>();
-		family.add(new StringDt(this.getFamilyName()));
-		humanNameDt.setFamily(family);
-		name.add(humanNameDt);
-		patient.setName(name);
+		patient.addName().addFamily(this.getFamilyName()).addGiven(this.getGivenName1());
+		if(this.getGivenName2() != null)
+			patient.addName().addFamily(this.getFamilyName()).addGiven(this.getGivenName2());
 		
 		return (T)patient;
 	}

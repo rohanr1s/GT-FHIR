@@ -1,18 +1,17 @@
 package edu.gatech.i3l.jpa.model.omop;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Collection;
 
+import ca.uhn.fhir.jpa.entity.BaseHasResource;
+import ca.uhn.fhir.jpa.entity.BaseTag;
+import ca.uhn.fhir.jpa.entity.TagDefinition;
 import ca.uhn.fhir.model.api.IResource;
-import ca.uhn.fhir.model.dstu2.composite.AddressDt;
 import ca.uhn.fhir.model.dstu2.resource.Patient;
-import ca.uhn.fhir.model.dstu2.valueset.AdministrativeGenderEnum;
 import ca.uhn.fhir.model.primitive.DateDt;
 import ca.uhn.fhir.model.primitive.IdDt;
-import ca.uhn.fhir.model.primitive.StringDt;
 
-public class Person implements IResourceTable{
+public class Person extends BaseHasResource implements IResourceTable{
 
 	private Long id;
 	private Integer yearOfBirth;
@@ -168,147 +167,69 @@ public class Person implements IResourceTable{
 		
 		Location location = this.getLocation();
 		if(location != null){
-			List<AddressDt> addresses = new ArrayList<AddressDt>();
-			AddressDt address = new AddressDt(); 
-			List<StringDt> lines = new ArrayList<StringDt>();
-			lines.add(new StringDt(location.getAddress1()));
-			lines.add(new StringDt(location.getAddress2()));
-			address.setLine(lines ); 
-			address.setCity(location.getCity());
-			address.setPostalCode(location.getZipCode());
-			address.setCountry(location.getCountry());
-			addresses.add(address);
-			patient.setAddress(addresses);
+			patient.addAddress()
+				.addLine(location.getAddress1())
+				.addLine(location.getAddress2())//WARNING check if mapping for lines are correct
+				.setCity(location.getCity())
+				.setPostalCode(location.getZipCode())
+				.setCountry(location.getCountry());
 		}
 		
 		Calendar calendar = Calendar.getInstance();
 		calendar.set(this.getYearOfBirth(), this.getMonthOfBirth(), this.getDayOfBirth());
 		patient.setBirthDate(new DateDt(calendar.getTime()));
 		
-		Concept gender = this.getGenderConcept(); 
-		if(gender != null){
-			AdministrativeGenderEnum admGender = null;
-			String gName = gender.getName(); 
-			if("MALE".equals(gName)){
-				admGender = AdministrativeGenderEnum.MALE;
-			}else if("FEMALE".equals(gName)){
-				admGender = AdministrativeGenderEnum.FEMALE;
-			}else if("OTHER".equals(gName)){
-				admGender = AdministrativeGenderEnum.OTHER;
-			}else if("UNKNOWN".equals(gName)){
-				admGender = AdministrativeGenderEnum.UNKNOWN;
-			}
-			patient.setGender(admGender);
-		}
+//		Concept gender = this.getGenderConcept(); //FIXME
+//		if(gender != null){
+//			AdministrativeGenderEnum admGender = null;
+//			String gName = gender.getName(); 
+//			if("MALE".equals(gName)){
+//				admGender = AdministrativeGenderEnum.MALE;
+//			}else if("FEMALE".equals(gName)){
+//				admGender = AdministrativeGenderEnum.FEMALE;
+//			}else if("OTHER".equals(gName)){
+//				admGender = AdministrativeGenderEnum.OTHER;
+//			}else if("UNKNOWN".equals(gName)){
+//				admGender = AdministrativeGenderEnum.UNKNOWN;
+//			}
+//			patient.setGender(admGender);
+//		}
 		
 		return (T)patient;
 	}
-
 	
-	class PatientFhirExtTable extends Person{
-
-		private String familyName;
-		private String givenName1;
-		private String givenName2;
-		private String prefixName;
-		private String suffixName;
-		private String preferredLanguage;
-		private String ssn;
-		private String maritalStatusConceptValue;
-		
-		public PatientFhirExtTable() {
-			super();
-		}
-
-		public PatientFhirExtTable(Long id, Integer yearOfBirth,
-				Integer monthOfBirth, Integer dayOfBirth, Location location,
-				Provider provider, String personSourceValue,
-				String genderSourceValue, Concept genderConcept,
-				String ethnicitySourceValue, Concept ethnicityConcept,
-				String raceSourceValue, Concept raceConcept,
-				String familyName, String givenName1,
-				String givenName2, String prefixName, String suffixName,
-				String preferredLanguage, String ssn,
-				String maritalStatusConceptValue) {
-			super(id, yearOfBirth, monthOfBirth, dayOfBirth, location, provider,
-					personSourceValue, genderSourceValue, genderConcept,
-					ethnicitySourceValue, ethnicityConcept, raceSourceValue,
-					raceConcept);
-			this.familyName = familyName;
-			this.givenName1 = givenName1;
-			this.givenName2 = givenName2;
-			this.prefixName = prefixName;
-			this.suffixName = suffixName;
-			this.preferredLanguage = preferredLanguage;
-			this.ssn = ssn;
-			this.maritalStatusConceptValue = maritalStatusConceptValue;
-		}
-
-		public String getFamilyName() {
-			return familyName;
-		}
-
-		public void setFamilyName(String familyName) {
-			this.familyName = familyName;
-		}
-
-		public String getGivenName1() {
-			return givenName1;
-		}
-
-		public void setGivenName1(String givenName1) {
-			this.givenName1 = givenName1;
-		}
-
-		public String getGivenName2() {
-			return givenName2;
-		}
-
-		public void setGivenName2(String givenName2) {
-			this.givenName2 = givenName2;
-		}
-
-		public String getPrefixName() {
-			return prefixName;
-		}
-
-		public void setPrefixName(String prefixName) {
-			this.prefixName = prefixName;
-		}
-
-		public String getSuffixName() {
-			return suffixName;
-		}
-
-		public void setSuffixName(String suffixName) {
-			this.suffixName = suffixName;
-		}
-
-		public String getPreferredLanguage() {
-			return preferredLanguage;
-		}
-
-		public void setPreferredLanguage(String preferredLanguage) {
-			this.preferredLanguage = preferredLanguage;
-		}
-
-		public String getSsn() {
-			return ssn;
-		}
-
-		public void setSsn(String ssn) {
-			this.ssn = ssn;
-		}
-
-		public String getMaritalStatusConceptValue() {
-			return maritalStatusConceptValue;
-		}
-
-		public void setMaritalStatusConceptValue(String maritalStatusConceptValue) {
-			this.maritalStatusConceptValue = maritalStatusConceptValue;
-		}
-		
-		
+	@Override
+	public BaseTag addTag(TagDefinition theDef) {
+		// TODO Auto-generated method stub
+		return null;
 	}
+
+	@Override
+	public IdDt getIdDt() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getResourceType() {
+		return "Patient";
+	}
+
+	@Override
+	public Collection<? extends BaseTag> getTags() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getVersion() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public Class<? extends IResource> getRelatedResourceType() {
+		return Patient.class;
+	}
+
 
 }
